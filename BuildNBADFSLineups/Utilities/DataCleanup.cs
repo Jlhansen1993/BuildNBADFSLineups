@@ -16,8 +16,8 @@ namespace BuildNBADFSLineups.Utilities
 
             switch (name)
             {
-                case "Mitchell Marner":
-                    name = "Mitch Marner";
+                case "P.J. Dozier":
+                    name = "PJ Dozier";
                     break;
             }
 
