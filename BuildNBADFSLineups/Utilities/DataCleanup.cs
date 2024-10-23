@@ -10,6 +10,17 @@ namespace BuildNBADFSLineups.Utilities
     {
         public static string FixNames(string name)
         {
+            // Adjust player name.
+            if (name.EndsWith("DTD"))
+            {
+                name = name.Substring(0, name.Length - 3);
+            }
+
+            if (name.EndsWith("Q"))
+            {
+                name = name.Substring(0, name.Length - 1);
+            }
+
             // Fix ' issues.
             name = name.Replace("&#x27;", "'");
             name = name.Replace("''", "'");

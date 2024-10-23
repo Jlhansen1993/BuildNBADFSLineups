@@ -136,17 +136,6 @@ while (retryCount < maxRetries)
                 // Find the player name.
                 var name = row.GetAttribute("data-name");
 
-                // Adjust player name.
-                if (name.EndsWith("DTD"))
-                {
-                    name = name.Substring(0, name.Length - 3);
-                }
-
-                if (name.EndsWith("Q"))
-                {
-                    name = name.Substring(0, name.Length - 1);
-                }
-
                 name = DataCleanup.FixNames(name);
 
                 // Check if we have a matching name.
@@ -454,16 +443,13 @@ using (IWebDriver driver = new ChromeDriver(chromeDriverService, options))
         for (int i = 3; i < playerRows.Count(); i++)
         {
             // Find the player name.
-            var name = playerRows[i].FindElement(By.CssSelector("div > div.flex.text-black.font-h2.hidden-xs.vertical-flex > div.text-black.flex.vertical-flex.col-space-md-left-2.col-space-sm-left-2.col-space-lg-left-2.playerWindowTrigger.hov")).Text.Replace("\r\n ", " ").Trim();
-
-            // Print the name to see if we are ont track.
-            Console.WriteLine(name);
+            var playerId = playerRows[i].GetAttribute("data-player_id");
 
             // Check if we have a matching name.
-            if (projections.Any(projection => projection.Name == name))
+            if (projections.Any(projection => projection.DFFId == playerId))
             {
                 // Get the matching projection.
-                var matchingProjection = projections.Where(projection => projection.Name == name).FirstOrDefault();
+                var matchingProjection = projections.Where(projection => projection.DFFId == playerId).FirstOrDefault();
 
                 // Set the projection.
                 var points = playerRows[i].FindElement(By.CssSelector("div > div.flex.flex-right.vertical-flex.col-pad-right-3.hidden-xs > div > div.col-width-5 > input"));
