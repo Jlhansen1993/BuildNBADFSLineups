@@ -13,11 +13,46 @@ namespace BuildNBADFSLineups.Utilities
             // Fix ' issues.
             name = name.Replace("&#x27;", "'");
             name = name.Replace("''", "'");
+            name = name.Replace("ü", "u");
+            name = name.Replace("é", "e");
+            name = name.Replace("ö", "o");
+            name = name.Replace("Ş", "S");
+            name = name.Replace("ć", "c");
+
+            // Remove suffixes.
+            if(name.EndsWith(" Jr."))
+            {
+                name = name.Substring(0, name.Length - 4);
+            }
+            else if(name.EndsWith(" II"))
+            {
+                name = name.Substring(0, name.Length - 3);
+            }
+            else if(name.EndsWith(" III"))
+            {
+                name = name.Substring(0, name.Length - 4);
+            }
+            else if(name.EndsWith(" IV"))
+            {
+                name = name.Substring(0, name.Length - 3);
+            }
 
             switch (name)
             {
-                case "Mitchell Marner":
-                    name = "Mitch Marner";
+                case "Cameron Thomas":
+                    name = "Cam Thomas";
+                    break;
+                case "Nicolas Claxton":
+                    name = "Nic Claxton";
+                    break;
+                case "C.J. McCollum":
+                    name = "CJ McCollum";
+                    break;
+                case "A.J. Green":
+                    name = "AJ Green";
+                    break;
+                case "Kenyon Martin":
+                    name = "KJ Martin";
                     break;
             }
 

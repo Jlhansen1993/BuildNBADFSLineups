@@ -3,6 +3,7 @@ using BuildNBADFSLineups.Utilities;
 using HtmlAgilityPack;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System.Data;
 using System.Net;
 
 // Define empty projections.
@@ -97,7 +98,7 @@ while (retryCount < maxRetries)
         using (IWebDriver driver = new ChromeDriver(chromeDriverService, options))
         {
             // Navigate to a website
-            driver.Navigate().GoToUrl("https://www.dailyfantasyfuel.com/nba?platform=fd");
+            driver.Navigate().GoToUrl("https://www.dailyfantasyfuel.com/nba/projections/fanduel");
 
             // Wait 1 seconds.
             Thread.Sleep(1000);
@@ -106,7 +107,7 @@ while (retryCount < maxRetries)
             string originalPageContent = driver.PageSource;
 
             // Find slate dropdown.
-            IWebElement slateDropdown = driver.FindElement(By.XPath("/html/body/div[1]/section[1]/div[3]/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div[1]/div"));
+            IWebElement slateDropdown = driver.FindElement(By.XPath("/html/body/div[2]/div[1]/div[1]/div[2]/div[2]/div/div[1]/div[1]/div[2]/div[2]"));
 
             // Select the dropdown.
             slateDropdown.Click();
@@ -115,7 +116,7 @@ while (retryCount < maxRetries)
             Thread.Sleep(1000);
 
             // Select slates.
-            var slates = driver.FindElements(By.XPath("/html/body/div[1]/section[1]/div[3]/div[1]/div/div[2]/div/div[2]/div[1]/div[2]/div/a"));
+            var slates = driver.FindElements(By.XPath("/html/body/div[2]/div[1]/div[1]/div[2]/div[2]/div/dialog/div/div[3]/div/a"));
 
             // Find the main slate.
             IWebElement mainSlate = slates.Where(s => s.Text.Contains("Main")).First();
@@ -123,39 +124,42 @@ while (retryCount < maxRetries)
             // Select the main slate.
             mainSlate.Click();
 
-            // Wait 1 seconds.
-            Thread.Sleep(1000);
-
-            // Click the show more rows button.
-            driver.FindElement(By.CssSelector("#listings > div > li")).Click();
-
             // Wait until page content changes.
             while (driver.PageSource == originalPageContent) { }
 
             // Get player rows.
-            var rows = driver.FindElements(By.CssSelector("#listings > li"));
+            var rows = driver.FindElements(By.XPath("/html/body/div[2]/div[1]/div[2]/div/div/table/tbody/tr[not(contains(@class, 'hidden'))]"));
 
             // Loop through each row.
-            for (int i = 3; i < rows.Count(); i++)
+            foreach ( var row in rows )
             {
                 // Find the player name.
-                var name = rows[i].FindElement(By.CssSelector("div > div.flex.text-black.font-h2.hidden-xs.vertical-flex > div.text-black.flex.vertical-flex.col-space-md-left-2.col-space-sm-left-2.col-space-lg-left-2.playerWindowTrigger.hov")).Text.Replace("\r\n ", " ").Trim();
+                var name = row.GetAttribute("data-name");
 
                 // Adjust player name.
-                name = name.Replace(" DTD", "");
+                if (name.EndsWith("DTD"))
+                {
+                    name = name.Substring(0, name.Length - 3);
+                }
+
+                if (name.EndsWith("Q"))
+                {
+                    name = name.Substring(0, name.Length - 1);
+                }
+
                 name = DataCleanup.FixNames(name);
 
                 // Check if we have a matching name.
-                if (projections.Any(projection => projection.Name == name))
+                if (projections.Any(projection => projection.Name.ToLower().Contains(name.ToLower())))
                 {
                     // Get the matching projection.
-                    var matchingProjection = projections.Where(projection => projection.Name == name).FirstOrDefault();
+                    var matchingProjection = projections.Where(projection => projection.Name.ToLower().Contains(name.ToLower())).FirstOrDefault();
 
                     // Set the Id.
-                    matchingProjection.DFFId = rows[i].FindElement(By.CssSelector("div > div.flex.text-black.font-h2.hidden-xs.vertical-flex > div.text-black.flex.vertical-flex.col-space-md-left-2.col-space-sm-left-2.col-space-lg-left-2.playerWindowTrigger.hov")).GetAttribute("data-player_id");
+                    matchingProjection.DFFId = row.GetAttribute("data-player_id");
 
                     // Set the projection.
-                    matchingProjection.DFFFProjectedFantasyPoints = Convert.ToDouble(rows[i].FindElement(By.CssSelector("div > div.flex.flex-right.vertical-flex.col-pad-right-3.hidden-xs > div > div.col-width-5 > input")).GetAttribute("value"));
+                    matchingProjection.DFFFProjectedFantasyPoints = Convert.ToDouble(row.GetAttribute("data-ppg_proj"));
                 }
                 else if (!name.Contains(" IR"))
                 {
@@ -300,7 +304,7 @@ while (retryCount < maxRetries)
                         var tdElements = row.FindElements(By.XPath("td"));
 
                         // Get data.
-                        string name = tdElements[0].Text.Replace("DAY", "").Trim().Replace("''", "'");
+                        string name = tdElements[0].Text.Replace("DAY", "").Replace("GTD", "").Trim().Replace("''", "'");
                         double pts = Convert.ToDouble(tdElements[10].FindElement(By.XPath("div/input")).GetAttribute("value"));
 
                         // If player is out, skip them.
@@ -413,6 +417,30 @@ using (IWebDriver driver = new ChromeDriver(chromeDriverService, options))
         // Select the main slate.
         mainSlate.Click();
 
+        // Select slates.
+        var stackButton = driver.FindElement(By.CssSelector("#desktop-sidebar-container > div > div > div.col-12.flex.vertical-flex.row-pad-fullpoint > div:nth-child(3) > div"));
+
+        // Click the stack button.
+        stackButton.Click();
+
+        // Wait 1 seconds.
+        Thread.Sleep(1000);
+
+        // Get element.
+        var minimumDifferencesButton = driver.FindElement(By.XPath("/html/body/div[4]/div/div[2]/div/div[6]/div/div/div/div/div[2]/div[3]"));
+
+        // Scroll the button into view
+        IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", minimumDifferencesButton);
+
+        // Click the button
+        js.ExecuteScript("arguments[0].click();", minimumDifferencesButton);
+
+        // Wait 3 seconds.
+        Thread.Sleep(1000);
+
+        driver.FindElement(By.XPath("/html/body/div[4]/div/div[1]/div/div/div/span")).Click();
+
         // Wait 3 seconds.
         Thread.Sleep(3000);
 
@@ -441,7 +469,6 @@ using (IWebDriver driver = new ChromeDriver(chromeDriverService, options))
                 var points = playerRows[i].FindElement(By.CssSelector("div > div.flex.flex-right.vertical-flex.col-pad-right-3.hidden-xs > div > div.col-width-5 > input"));
 
                 // Use JavaScript to set the value of the input element
-                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
                 js.ExecuteScript("arguments[0].value=arguments[1];", points, matchingProjection.FinalFantasyPoints.ToString());
             }
         }
@@ -495,18 +522,18 @@ using (IWebDriver driver = new ChromeDriver(chromeDriverService, options))
                 // Get players.
                 var playersInLineup = driver.FindElements(By.CssSelector("#desktop-sidebar-container > div > div > ul.mypicks-desktop.pad-fullpoint > li"));
 
-                var c1 = projections.FindAll(p => p.DFFId == playersInLineup[0].GetAttribute("data-player_id")).FirstOrDefault();
-                var c2 = projections.FindAll(p => p.DFFId == playersInLineup[1].GetAttribute("data-player_id")).FirstOrDefault();
-                var w1 = projections.FindAll(p => p.DFFId == playersInLineup[2].GetAttribute("data-player_id")).FirstOrDefault();
-                var w2 = projections.FindAll(p => p.DFFId == playersInLineup[3].GetAttribute("data-player_id")).FirstOrDefault();
-                var d1 = projections.FindAll(p => p.DFFId == playersInLineup[4].GetAttribute("data-player_id")).FirstOrDefault();
-                var d2 = projections.FindAll(p => p.DFFId == playersInLineup[5].GetAttribute("data-player_id")).FirstOrDefault();
-                var util1 = projections.FindAll(p => p.DFFId == playersInLineup[6].GetAttribute("data-player_id")).FirstOrDefault();
-                var util2 = projections.FindAll(p => p.DFFId == playersInLineup[7].GetAttribute("data-player_id")).FirstOrDefault();
-                var g = projections.FindAll(p => p.DFFId == playersInLineup[8].GetAttribute("data-player_id")).FirstOrDefault();
+                var pg1 = projections.FindAll(p => p.DFFId == playersInLineup[0].GetAttribute("data-player_id")).FirstOrDefault();
+                var pg2 = projections.FindAll(p => p.DFFId == playersInLineup[1].GetAttribute("data-player_id")).FirstOrDefault();
+                var sg1 = projections.FindAll(p => p.DFFId == playersInLineup[2].GetAttribute("data-player_id")).FirstOrDefault();
+                var sg2 = projections.FindAll(p => p.DFFId == playersInLineup[3].GetAttribute("data-player_id")).FirstOrDefault();
+                var sf1 = projections.FindAll(p => p.DFFId == playersInLineup[4].GetAttribute("data-player_id")).FirstOrDefault();
+                var sf2 = projections.FindAll(p => p.DFFId == playersInLineup[5].GetAttribute("data-player_id")).FirstOrDefault();
+                var pf1 = projections.FindAll(p => p.DFFId == playersInLineup[6].GetAttribute("data-player_id")).FirstOrDefault();
+                var pf2 = projections.FindAll(p => p.DFFId == playersInLineup[7].GetAttribute("data-player_id")).FirstOrDefault();
+                var c = projections.FindAll(p => p.DFFId == playersInLineup[8].GetAttribute("data-player_id")).FirstOrDefault();
 
                 // Define temp lineup.
-                var tempLineup = new NBAProjectionList { c1, c2, w1, w2, d1, d2, util1, util2, g };
+                var tempLineup = new NBAProjectionList { pg1, pg2, sg1, sg2, sf1, sf2, pf1, pf2, c };
 
                 // Get lineup score.
                 double score = Convert.ToDouble(driver.FindElement(By.CssSelector("#desktop-sidebar-container > div > div > div.summary-container.vertical-md.row-pad-top-3.row-pad-3 > div > div.col-12.col-md-10.flex > div.col-space-left-3.col-width-5.col-space-right-6.col-space-md-right-5 > span.summary-container-value.text-right > span")).Text);
