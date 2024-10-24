@@ -65,6 +65,9 @@ namespace BuildNBADFSLineups.Utilities
                 case "Kenyon Martin":
                     name = "KJ Martin";
                     break;
+                case "PJ Washington":
+                    name = "P.J. Washington";
+                    break;
             }
 
             return name.Trim();
