@@ -29,6 +29,9 @@ namespace BuildNBADFSLineups.Utilities
             name = name.Replace("ö", "o");
             name = name.Replace("Ş", "S");
             name = name.Replace("ć", "c");
+            name = name.Replace("č", "c");
+            name = name.Replace("ū", "u");
+            name = name.Replace("Š", "S");
 
             // Remove suffixes.
             if(name.EndsWith(" Jr."))
