@@ -14,7 +14,7 @@ namespace BuildNBADFSLineups.BOL
         public string Team { get; set; }
         public int Salary { get; set; }
         public string Position { get; set; }
-        public double Last5FPPG { get; set; }
+        public double FantasyPointsPerGame { get; set; }
         public double DFFFProjectedFantasyPoints { get; set; }
         public double NFProjectedFantasyPoints { get; set; }
         public double RWProjectedFantasyPoints { get; set; }

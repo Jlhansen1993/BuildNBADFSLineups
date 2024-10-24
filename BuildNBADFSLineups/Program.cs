@@ -64,6 +64,7 @@ for (int i = 1; i < lineData.Length; i++)
             Id = lineColumns[0],
             Position = lineColumns[1],
             Name = lineColumns[3],
+            FantasyPointsPerGame = Math.Round(double.TryParse(lineColumns[5], out double avg) ? avg : 0, 2),
             Salary = Convert.ToInt32(lineColumns[7]),
             Team = lineColumns[9]
         });
@@ -355,20 +356,27 @@ foreach (NBAProjection projection in projections)
     // Get the average.
     if (nonZeroScores.Length > 0)
     {
-        /*// Check if we have last 5 points average.
-        if(projection.Last5FPPG > 0)
+        // Define weights for past performance and today's projected points
+        double pastPerformanceWeight = 0.7;
+        double projectedPointsWeight = 0.3;
+
+        // Calculate the weighted average
+        if (projection.FantasyPointsPerGame > 0)
         {
-            // Get average of last 5 pts average and current projected points.
-            projection.FinalFantasyPoints = Math.Round((nonZeroScores.Average() + projection.Last5FPPG) / 2, 2);
+            // Weighted average of past performance and today's projected points
+            projection.FinalFantasyPoints = Math.Round(
+                (projection.FantasyPointsPerGame * pastPerformanceWeight) + (nonZeroScores.Average() * projectedPointsWeight),
+                2);
         }
         else
-        {*/
-        projection.FinalFantasyPoints = Math.Round(nonZeroScores.Average(), 2);
-        //}
+        {
+            // If no FPPG, just use the average of recent non-zero scores
+            projection.FinalFantasyPoints = Math.Round(nonZeroScores.Average(), 2);
+        }
     }
     else
     {
-        // If all scores are zero, set FinalFantasyPoints to zero
+        // If no recent scores, just use today's projected points
         projection.FinalFantasyPoints = 0;
     }
 }
@@ -407,7 +415,7 @@ using (IWebDriver driver = new ChromeDriver(chromeDriverService, options))
         mainSlate.Click();
 
         // Select slates.
-        var stackButton = driver.FindElement(By.CssSelector("#desktop-sidebar-container > div > div > div.col-12.flex.vertical-flex.row-pad-fullpoint > div:nth-child(3) > div"));
+        /*var stackButton = driver.FindElement(By.CssSelector("#desktop-sidebar-container > div > div > div.col-12.flex.vertical-flex.row-pad-fullpoint > div:nth-child(3) > div"));
 
         // Click the stack button.
         stackButton.Click();
@@ -431,7 +439,7 @@ using (IWebDriver driver = new ChromeDriver(chromeDriverService, options))
         driver.FindElement(By.XPath("/html/body/div[4]/div/div[1]/div/div/div/span")).Click();
 
         // Wait 3 seconds.
-        Thread.Sleep(3000);
+        Thread.Sleep(3000);*/
 
         // Click the show more rows button.
         driver.FindElement(By.CssSelector("#listings > div > li")).Click();
@@ -455,6 +463,7 @@ using (IWebDriver driver = new ChromeDriver(chromeDriverService, options))
                 var points = playerRows[i].FindElement(By.CssSelector("div > div.flex.flex-right.vertical-flex.col-pad-right-3.hidden-xs > div > div.col-width-5 > input"));
 
                 // Use JavaScript to set the value of the input element
+                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
                 js.ExecuteScript("arguments[0].value=arguments[1];", points, matchingProjection.FinalFantasyPoints.ToString());
             }
         }
